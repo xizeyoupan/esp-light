@@ -1,0 +1,51 @@
+#include "user_config.h"
+user_config_t user_config;
+
+static const char *TAG = "MAIN";
+
+extern MessageBufferHandle_t xMessageBufferReqSend;
+extern MessageBufferHandle_t xMessageBufferReqRecv;
+
+int my_vprintf(const char *_Format, va_list _ArgList)
+{
+    return vprintf(_Format, _ArgList);
+}
+
+void app_main(void)
+{
+    // Initialize NVS
+    ESP_LOGI(TAG, "Initialize NVS");
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+        ESP_LOGI(TAG, "NVS flash erased");
+    }
+    ESP_ERROR_CHECK(ret);
+
+    load_user_config();
+
+    // Start wifi and web server
+    xTaskCreate(&wand_server_task, "wand_server", 1024 * 5, NULL, 15, NULL);
+
+    // Start ws
+    xTaskCreate(&websocket_send_task, "websocket_send", 1024 * 5, NULL, 10, NULL);
+    vTaskDelay(pdMS_TO_TICKS(100));
+    configASSERT(xMessageBufferReqSend);
+
+    xTaskCreate(&handle_req_task, "handle_req", 1024 * 5, NULL, 12, NULL);
+    vTaskDelay(pdMS_TO_TICKS(100));
+    configASSERT(xMessageBufferReqRecv);
+
+    xTaskCreate(&scan_button_task, "scan_button", 1024 * 5, NULL, 5, NULL);
+
+    // esp_log_set_vprintf(my_vprintf);
+
+    gpio_config_t io_conf = {};
+    io_conf.intr_type     = GPIO_INTR_DISABLE; // 禁用中断
+    io_conf.pin_bit_mask  = (1ULL << 10);      // 设置 GPIO
+    io_conf.mode          = GPIO_MODE_OUTPUT;  // 设置为输入模式
+    gpio_config(&io_conf);
+
+    gpio_set_level(10, 0); // 设置 GPIO 低电平
+}

@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "type": "gdb",
+            "request": "attach",
+            "name": "NativeDebug",
+            "target": "extended-remote :3333",
+            "executable": "${workspaceFolder}/build/${command:espIdf.getProjectName}.elf",
+            "gdbpath": "${config:idf.toolsPathWin}\\tools\\riscv32-esp-elf-gdb\\12.1_20231023\\riscv32-esp-elf-gdb\\bin\\riscv32-esp-elf-gdb.exe",
+            "cwd": "${workspaceRoot}",
+            "autorun": [
+                "mon reset halt",
+                "maintenance flush register-cache",
+                "thb app_main"
+            ]
+        }
+    ]
+}

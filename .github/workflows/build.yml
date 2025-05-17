@@ -1,0 +1,27 @@
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+
+      - name: replace commit id
+        run: sed -i "s/GIT_COMMIT_SHA1/$(git log -n 1 --pretty=format:'%h')/" main/service/device_service.c
+
+      - name: esp-idf build
+        run: docker run --rm -v $PWD:/project -w /project -u $UID -e HOME=/tmp espressif/idf:release-v5.3 idf.py build
+
+      - name: Archive build output artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            build/bootloader/bootloader.bin
+            build/partition_table/partition-table.bin
+            build/${{ github.event.repository.name }}.bin

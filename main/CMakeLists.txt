@@ -1,0 +1,17 @@
+idf_component_register(
+    SRCS
+    "nvs_util.c"
+    "main.c"
+    "./task/wand_server_task.c"
+    "./task/ws_task.c"
+    "./task/handle_req_task.c"
+    "./task/button.c"
+    "./service/wifi_service.c"
+    "./service/device_service.c"
+    "./service/button_service.c"
+    "./service/http_service.c"
+    INCLUDE_DIRS
+    "."
+    "./service"
+    "./task"
+)
