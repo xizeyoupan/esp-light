@@ -131,7 +131,10 @@
         "control_service.h": "c",
         "string.h": "c",
         "cnn.h": "c",
-        "handle_req_task.h": "c"
+        "handle_req_task.h": "c",
+        "mqtt_service.h": "c",
+        "mqtt_client.h": "c",
+        "pwm_service.h": "c"
     },
     "idf.port": "/dev/ttyUSB0",
     "idf.espIdfPath": "/home/mio/esp/v5.2.3/esp-idf",
@@ -139,4 +142,7 @@
     "idf.customExtraVars": {
         "IDF_TARGET": "esp32c3"
     },
+    "idf.espIdfPathWin": "C:\\Users\\liuke\\esp\\v5.3\\esp-idf",
+    "idf.toolsPathWin": "C:\\Users\\liuke\\.espressif",
+    "idf.pythonInstallPath": "C:\\Users\\liuke\\.espressif\\tools\\idf-python\\3.11.2\\python.exe",
 }

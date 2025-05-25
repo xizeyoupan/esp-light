@@ -3,31 +3,6 @@
 static const char *TAG = "NVS_UTIL";
 extern SemaphoreHandle_t user_config_mutex;
 
-// 保存 Wi-Fi 配置到 NVS
-esp_err_t save_wifi_config(char *wifi_ssid, char *wifi_pass)
-{
-    nvs_handle_t nvs_handle;
-    esp_err_t err = nvs_open("wifi_config", NVS_READWRITE, &nvs_handle);
-    if (err != ESP_OK) {
-        goto save_wifi_config_end;
-    }
-    err = nvs_set_str(nvs_handle, "ssid", wifi_ssid);
-    if (err != ESP_OK) {
-        goto save_wifi_config_end;
-    }
-    err = nvs_set_str(nvs_handle, "password", wifi_pass);
-    if (err != ESP_OK) {
-        goto save_wifi_config_end;
-    }
-    err = nvs_commit(nvs_handle);
-    if (err != ESP_OK) {
-        goto save_wifi_config_end;
-    }
-save_wifi_config_end:
-    nvs_close(nvs_handle);
-    return err;
-}
-
 esp_err_t save_to_namespace(char *user_namespace, const char *key, void *value, size_t size)
 {
     nvs_handle_t nvs_handle;
@@ -70,9 +45,23 @@ extern user_config_t user_config;
 void reset_user_config()
 {
     ESP_LOGI(TAG, "Reset user config");
-    user_config.key_gpio_num           = 9;
+    user_config.pwm_gpio_num = 10;
+    user_config.key_gpio_num = 9;
+
+    user_config.brightness_input = 50;
+
+    user_config.frequency    = 50000;
+    user_config.pwm_duty_min = 5;
+    user_config.pwm_duty_max = 90;
+
+    user_config.boot_action     = BOOT_ACTION_KEEP;
+    user_config.boot_brightness = 50;
+
+    user_config.output_func = OUTPUT_FUNC_LINEAR;
+    user_config.gamma_value = 2.2;
+
     user_config.wifi_scan_list_size    = 20;
-    user_config.wifi_connect_max_retry = 5;
+    user_config.wifi_connect_max_retry = 10;
     strcpy(user_config.username, "murasame");
     strcpy(user_config.password, "0d00");
     strcpy(user_config.wifi_ap_ssid, "ESP-LIGHT-AP");
@@ -82,6 +71,8 @@ void reset_user_config()
     user_config.ws_send_buf_size  = 10 * 1024;
     user_config.msg_buf_recv_size = 1024;
     user_config.msg_buf_send_size = 30 * 1024;
+
+    strcpy(user_config.broker_address_uri, "mqtt://bemfa.com:9501");
 }
 
 void load_user_config()
@@ -93,20 +84,21 @@ void load_user_config()
         reset_user_config();
     }
 
-    ESP_LOGI(TAG, "KEY GPIO: %d", user_config.key_gpio_num);
-    ESP_LOGI(TAG, "USERNAME: %s", user_config.username);
-    ESP_LOGI(TAG, "PASSWORD: %s", user_config.password);
-    ESP_LOGI(TAG, "WIFI SCAN LIST SIZE: %d", user_config.wifi_scan_list_size);
-    ESP_LOGI(TAG, "WIFI CONNECT MAX RETRY: %d", user_config.wifi_connect_max_retry);
-    ESP_LOGI(TAG, "MDNS HOST NAME: %s", user_config.mdns_host_name);
-    ESP_LOGI(TAG, "WIFI AP SSID: %s", user_config.wifi_ap_ssid);
-    ESP_LOGI(TAG, "WIFI AP PASSWORD: %s", user_config.wifi_ap_pass);
-    ESP_LOGI(TAG, "WIFI SSID: %s", user_config.wifi_ssid);
-    ESP_LOGI(TAG, "WIFI PASSWORD: %s", user_config.wifi_pass);
-    ESP_LOGI(TAG, "WS RECV BUF SIZE: %d", user_config.ws_recv_buf_size);
-    ESP_LOGI(TAG, "WS SEND BUF SIZE: %d", user_config.ws_send_buf_size);
-    ESP_LOGI(TAG, "MSG BUF RECV SIZE: %d", user_config.msg_buf_recv_size);
-    ESP_LOGI(TAG, "MSG BUF SEND SIZE: %d", user_config.msg_buf_send_size);
+    cJSON *config = get_user_config_json();
+    if (config == NULL) {
+        ESP_LOGE(TAG, "Failed to get user config JSON");
+        return;
+    }
+
+    char *config_str = cJSON_Print(config);
+    if (config_str == NULL) {
+        ESP_LOGE(TAG, "Failed to print user config JSON");
+        cJSON_Delete(config);
+        return;
+    }
+    ESP_LOGI(TAG, "User config JSON: %s", config_str);
+    cJSON_Delete(config);
+    free(config_str);
 }
 
 void save_user_config()

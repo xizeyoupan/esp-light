@@ -37,6 +37,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
                 ESP_LOGW(TAG, "Failed to connect, switching back to AP mode.");
                 xEventGroupClearBits(s_wifi_event_group, WIFI_FAIL_BIT);
                 esp_wifi_stop();
+                bemfa_mqtt_stop();
                 start_ap_mode();
             }
         }
@@ -45,6 +46,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
         ESP_LOGI(TAG, "Connected with IP Address:" IPSTR, IP2STR(&event->ip_info.ip));
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
         s_retry_num = 0;
+        bemfa_mqtt_start();
     }
 }
 

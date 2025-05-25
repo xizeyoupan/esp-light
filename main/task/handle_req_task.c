@@ -94,7 +94,65 @@ void handle_req_task(void *pvParameters)
                 }
                 cJSON_AddItemToObject(resp_json, "data", task_state);
 
-            } else if (strcmp(param->valuestring, "get_state_info") == 0) {
+            } else if (strcmp(param->valuestring, "get_user_config") == 0) {
+
+                cJSON_AddStringToObject(resp_json, "param", "user_config");
+                cJSON *user_config_json = get_user_config_json();
+                if (user_config_json == NULL) {
+                    goto json_parse_end;
+                }
+                cJSON_AddItemToObject(resp_json, "data", user_config_json);
+
+            } else if (strcmp(param->valuestring, "update_ledc") == 0) {
+                const cJSON *data = cJSON_GetObjectItem(monitor_json, "data");
+                if (data == NULL || !cJSON_IsObject(data)) {
+                    ESP_LOGE(TAG, "Invalid data for update_ledc");
+                    goto json_parse_end;
+                }
+
+                assign_ledc_config_from_json(data);
+
+                save_user_config();
+                ledc_update_pwm();
+
+                mqtt_publish_brightness();
+
+                cJSON_AddStringToObject(resp_json, "param", "user_config");
+                cJSON *user_config_json = get_user_config_json();
+                if (user_config_json == NULL) {
+                    goto json_parse_end;
+                }
+                cJSON_AddItemToObject(resp_json, "data", user_config_json);
+            } else if (strcmp(param->valuestring, "update_user_config") == 0) {
+                const cJSON *data = cJSON_GetObjectItem(monitor_json, "data");
+                if (data == NULL || !cJSON_IsObject(data)) {
+                    ESP_LOGE(TAG, "Invalid data for update_user_config");
+                    goto json_parse_end;
+                }
+
+                assign_user_config_from_json(data);
+
+                save_user_config();
+                ledc_update_pwm();
+
+                cJSON_AddStringToObject(resp_json, "param", "user_config");
+                cJSON *user_config_json = get_user_config_json();
+                if (user_config_json == NULL) {
+                    goto json_parse_end;
+                }
+                cJSON_AddItemToObject(resp_json, "data", user_config_json);
+            } else if (strcmp(param->valuestring, "reboot") == 0) {
+                esp_restart();
+            } else if (strcmp(param->valuestring, "reset_user_config") == 0) {
+                reset_user_config();
+                save_user_config();
+
+                cJSON_AddStringToObject(resp_json, "param", "user_config");
+                cJSON *user_config_json = get_user_config_json();
+                if (user_config_json == NULL) {
+                    goto json_parse_end;
+                }
+                cJSON_AddItemToObject(resp_json, "data", user_config_json);
             }
         } else if (strcmp(type->valuestring, "ping") == 0) {
             cJSON_AddStringToObject(resp_json, "type", "pong");

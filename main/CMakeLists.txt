@@ -10,6 +10,8 @@ idf_component_register(
     "./service/device_service.c"
     "./service/button_service.c"
     "./service/http_service.c"
+    "./service/mqtt_service.c"
+    "./service/pwm_service.c"
     INCLUDE_DIRS
     "."
     "./service"

@@ -8,6 +8,8 @@
 #include "mdns.h"
 #include "multi_button.h"
 
+#include "mqtt_client.h"
+
 #include "esp_clk_tree.h"
 #include "esp_err.h"
 #include "esp_event.h"
@@ -20,6 +22,7 @@
 
 #include "driver/gpio.h"
 #include "driver/i2c.h"
+#include "driver/ledc.h"
 #include "driver/rmt_tx.h"
 
 #include "freertos/FreeRTOS.h"
@@ -36,6 +39,8 @@
 #include "service/wifi_service.h"
 #include "service/button_service.h"
 #include "service/http_service.h"
+#include "service/mqtt_service.h"
+#include "service/pwm_service.h"
 
 #include "task/button.h"
 #include "task/ws_task.h"
@@ -56,13 +61,22 @@ typedef enum {
     COLOR_NONE    = 0x000000,
 } color_enum;
 
+typedef enum {
+    BOOT_ACTION_KEEP,
+    BOOT_ACTION_FIXED,
+} boot_action_enum;
+
+typedef enum {
+    OUTPUT_FUNC_LINEAR,
+    OUTPUT_FUNC_GAMMA,
+} output_func_enum;
+
 #define SW_VERSION                "v0.0.1"
 #define USER_CONFIG_NVS_NAMESPACE "user_config"
 #define USER_CONFIG_NVS_KEY       "config_data"
 #define MODEL_DATASET_ID          -1
-#define WIFI_SSID_MAX_LEN            32
-#define WIFI_PASS_MAX_LEN            64
-
+#define WIFI_SSID_MAX_LEN         32
+#define WIFI_PASS_MAX_LEN         64
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,6 +86,17 @@ extern "C" {
 typedef struct
 {
     gpio_num_t key_gpio_num;
+    gpio_num_t pwm_gpio_num;
+
+    uint8_t brightness_input; // 0-100
+    uint32_t frequency;
+    uint8_t pwm_duty_min;
+    uint8_t pwm_duty_max;
+    boot_action_enum boot_action;
+    uint8_t boot_brightness;
+    output_func_enum output_func;
+    float gamma_value;
+
     char username[32];
     char password[32];
     char mdns_host_name[32];
@@ -85,6 +110,11 @@ typedef struct
     int ws_send_buf_size;
     int msg_buf_recv_size;
     int msg_buf_send_size;
+
+    char broker_address_uri[128];
+    char mqtt_client_id[128];
+    char mqtt_topic[128];
+
 } user_config_t;
 
 #ifdef __cplusplus

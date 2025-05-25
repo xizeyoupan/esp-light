@@ -9,6 +9,7 @@ extern MessageBufferHandle_t xMessageBufferReqRecv;
 int my_vprintf(const char *_Format, va_list _ArgList)
 {
     return vprintf(_Format, _ArgList);
+    // return 0;
 }
 
 void app_main(void)
@@ -39,13 +40,7 @@ void app_main(void)
 
     xTaskCreate(&scan_button_task, "scan_button", 1024 * 5, NULL, 5, NULL);
 
-    // esp_log_set_vprintf(my_vprintf);
+    ledc_init();
 
-    gpio_config_t io_conf = {};
-    io_conf.intr_type     = GPIO_INTR_DISABLE; // 禁用中断
-    io_conf.pin_bit_mask  = (1ULL << 10);      // 设置 GPIO
-    io_conf.mode          = GPIO_MODE_OUTPUT;  // 设置为输入模式
-    gpio_config(&io_conf);
-
-    gpio_set_level(10, 0); // 设置 GPIO 低电平
+    esp_log_set_vprintf(my_vprintf);
 }

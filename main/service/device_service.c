@@ -1,6 +1,7 @@
 #include "device_service.h"
 
 static const char *TAG = "DEVICE_SERVICE";
+extern user_config_t user_config;
 
 cJSON *get_device_info(void)
 {
@@ -25,7 +26,7 @@ get_device_info_end:
     return data;
 }
 
-cJSON * get_task_state(void)
+cJSON *get_task_state(void)
 {
     cJSON *data      = cJSON_CreateObject();
     cJSON *task_list = cJSON_CreateArray();
@@ -89,4 +90,122 @@ cJSON * get_task_state(void)
 
 get_state_info_end:
     return data;
+}
+
+cJSON *get_user_config_json(void)
+{
+    cJSON *data = cJSON_CreateObject();
+    if (data == NULL) {
+        goto get_user_config_json_end;
+    }
+
+    cJSON_AddNumberToObject(data, "key_gpio_num", user_config.key_gpio_num);
+    cJSON_AddNumberToObject(data, "pwm_gpio_num", user_config.pwm_gpio_num);
+    cJSON_AddNumberToObject(data, "brightness_input", user_config.brightness_input);
+    cJSON_AddNumberToObject(data, "frequency", user_config.frequency);
+    cJSON_AddNumberToObject(data, "pwm_duty_min", user_config.pwm_duty_min);
+    cJSON_AddNumberToObject(data, "pwm_duty_max", user_config.pwm_duty_max);
+    cJSON_AddNumberToObject(data, "boot_action", user_config.boot_action);
+    cJSON_AddNumberToObject(data, "boot_brightness", user_config.boot_brightness);
+    cJSON_AddNumberToObject(data, "output_func", user_config.output_func);
+    cJSON_AddNumberToObject(data, "gamma_value", user_config.gamma_value);
+    cJSON_AddNumberToObject(data, "duty_output", get_output_pwm_value());
+
+    cJSON_AddStringToObject(data, "username", user_config.username);
+    cJSON_AddStringToObject(data, "password", user_config.password);
+    cJSON_AddStringToObject(data, "mdns_host_name", user_config.mdns_host_name);
+    cJSON_AddStringToObject(data, "wifi_ap_ssid", user_config.wifi_ap_ssid);
+    cJSON_AddStringToObject(data, "wifi_ap_pass", user_config.wifi_ap_pass);
+    cJSON_AddStringToObject(data, "wifi_ssid", user_config.wifi_ssid);
+    cJSON_AddStringToObject(data, "wifi_pass", user_config.wifi_pass);
+
+    cJSON_AddNumberToObject(data, "wifi_scan_list_size", user_config.wifi_scan_list_size);
+    cJSON_AddNumberToObject(data, "wifi_connect_max_retry", user_config.wifi_connect_max_retry);
+
+    cJSON_AddNumberToObject(data, "ws_recv_buf_size", user_config.ws_recv_buf_size);
+    cJSON_AddNumberToObject(data, "ws_send_buf_size", user_config.ws_send_buf_size);
+
+    cJSON_AddNumberToObject(data, "msg_buf_recv_size", user_config.msg_buf_recv_size);
+    cJSON_AddNumberToObject(data, "msg_buf_send_size", user_config.msg_buf_send_size);
+
+    cJSON_AddStringToObject(data, "broker_address_uri", user_config.broker_address_uri);
+    cJSON_AddStringToObject(data, "mqtt_client_id", user_config.mqtt_client_id);
+    cJSON_AddStringToObject(data, "mqtt_topic", user_config.mqtt_topic);
+
+get_user_config_json_end:
+    return data;
+}
+
+void assign_ledc_config_from_json(const cJSON *data)
+{
+    if (data == NULL) {
+        ESP_LOGE(TAG, "Invalid data for LEDC config");
+        return;
+    }
+
+    const cJSON *brightness_input = cJSON_GetObjectItem(data, "brightness_input");
+    user_config.brightness_input  = brightness_input->valuedouble;
+    const cJSON *frequency       = cJSON_GetObjectItem(data, "frequency");
+    user_config.frequency        = frequency->valuedouble;
+    const cJSON *pwm_duty_min    = cJSON_GetObjectItem(data, "pwm_duty_min");
+    user_config.pwm_duty_min     = pwm_duty_min->valuedouble;
+    const cJSON *pwm_duty_max    = cJSON_GetObjectItem(data, "pwm_duty_max");
+    user_config.pwm_duty_max     = pwm_duty_max->valuedouble;
+    const cJSON *boot_action     = cJSON_GetObjectItem(data, "boot_action");
+    user_config.boot_action      = boot_action->valuedouble;
+    const cJSON *boot_brightness = cJSON_GetObjectItem(data, "boot_brightness");
+    user_config.boot_brightness  = boot_brightness->valuedouble;
+    const cJSON *output_func     = cJSON_GetObjectItem(data, "output_func");
+    user_config.output_func      = output_func->valuedouble;
+    const cJSON *gamma_value     = cJSON_GetObjectItem(data, "gamma_value");
+    user_config.gamma_value      = gamma_value->valuedouble;
+}
+
+void assign_user_config_from_json(const cJSON *data)
+{
+    if (data == NULL) {
+        ESP_LOGE(TAG, "Invalid data for LEDC config");
+        return;
+    }
+
+    assign_ledc_config_from_json(data);
+
+    const cJSON *key_gpio_num = cJSON_GetObjectItem(data, "key_gpio_num");
+    user_config.key_gpio_num  = key_gpio_num->valuedouble;
+    const cJSON *pwm_gpio_num = cJSON_GetObjectItem(data, "pwm_gpio_num");
+    user_config.pwm_gpio_num  = pwm_gpio_num->valuedouble;
+
+    const cJSON *username = cJSON_GetObjectItem(data, "username");
+    strcpy(user_config.username, username->valuestring);
+    const cJSON *password = cJSON_GetObjectItem(data, "password");
+    strcpy(user_config.password, password->valuestring);
+    const cJSON *mdns_host_name = cJSON_GetObjectItem(data, "mdns_host_name");
+    strcpy(user_config.mdns_host_name, mdns_host_name->valuestring);
+    const cJSON *wifi_ap_ssid = cJSON_GetObjectItem(data, "wifi_ap_ssid");
+    strcpy(user_config.wifi_ap_ssid, wifi_ap_ssid->valuestring);
+    const cJSON *wifi_ap_pass = cJSON_GetObjectItem(data, "wifi_ap_pass");
+    strcpy(user_config.wifi_ap_pass, wifi_ap_pass->valuestring);
+    const cJSON *wifi_ssid = cJSON_GetObjectItem(data, "wifi_ssid");
+    strcpy(user_config.wifi_ssid, wifi_ssid->valuestring);
+    const cJSON *wifi_pass = cJSON_GetObjectItem(data, "wifi_pass");
+    strcpy(user_config.wifi_pass, wifi_pass->valuestring);
+    const cJSON *wifi_scan_list_size    = cJSON_GetObjectItem(data, "wifi_scan_list_size");
+    user_config.wifi_scan_list_size     = wifi_scan_list_size->valuedouble;
+    const cJSON *wifi_connect_max_retry = cJSON_GetObjectItem(data, "wifi_connect_max_retry");
+    user_config.wifi_connect_max_retry  = wifi_connect_max_retry->valuedouble;
+    const cJSON *ws_recv_buf_size       = cJSON_GetObjectItem(data, "ws_recv_buf_size");
+    user_config.ws_recv_buf_size        = ws_recv_buf_size->valuedouble;
+    const cJSON *ws_send_buf_size       = cJSON_GetObjectItem(data, "ws_send_buf_size");
+    user_config.ws_send_buf_size        = ws_send_buf_size->valuedouble;
+    const cJSON *msg_buf_recv_size      = cJSON_GetObjectItem(data, "msg_buf_recv_size");
+    user_config.msg_buf_recv_size       = msg_buf_recv_size->valuedouble;
+    const cJSON *msg_buf_send_size      = cJSON_GetObjectItem(data, "msg_buf_send_size");
+    user_config.msg_buf_send_size       = msg_buf_send_size->valuedouble;
+
+    const cJSON *broker_address_uri = cJSON_GetObjectItem(data, "broker_address_uri");
+    strcpy(user_config.broker_address_uri, broker_address_uri->valuestring);
+    const cJSON *mqtt_client_id = cJSON_GetObjectItem(data, "mqtt_client_id");
+    strcpy(user_config.mqtt_client_id, mqtt_client_id->valuestring);
+    const cJSON *mqtt_topic = cJSON_GetObjectItem(data, "mqtt_topic");
+    strcpy(user_config.mqtt_topic, mqtt_topic->valuestring);
 }
