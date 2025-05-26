@@ -76,11 +76,79 @@ esp_err_t websocket_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+char buf[4096];
+esp_err_t ota_post_handler(httpd_req_t *req)
+{
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+
+    esp_ota_handle_t ota_handle;
+    const esp_partition_t *ota_partition = esp_ota_get_next_update_partition(NULL);
+    if (!ota_partition) {
+        ESP_LOGE("OTA", "No OTA partition found");
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "No OTA partition");
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI("OTA", "Start updating to partition: %s", ota_partition->label);
+    esp_err_t err = esp_ota_begin(ota_partition, OTA_SIZE_UNKNOWN, &ota_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE("OTA", "esp_ota_begin failed: %s", esp_err_to_name(err));
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "OTA begin failed");
+        esp_ota_abort(ota_handle);
+        return err;
+    }
+
+    // 读取并写入 OTA 数据
+    int remaining = req->content_len;
+    int total     = 0;
+    int received;
+    ESP_LOGI("OTA", "Receiving %d bytes", remaining);
+    while (remaining > 0) {
+        received = httpd_req_recv(req, buf, MIN(remaining, sizeof(buf)));
+        if (received <= 0) break;
+        esp_ota_write(ota_handle, buf, received);
+        remaining -= received;
+        total += received;
+    }
+
+    esp_ota_end(ota_handle);
+
+    // 验证并切换
+    err = esp_ota_set_boot_partition(ota_partition);
+    if (err != ESP_OK) {
+        ESP_LOGE("OTA", "esp_ota_set_boot_partition failed: %s", esp_err_to_name(err));
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "OTA set boot partition failed");
+        return err;
+    }
+    ESP_LOGI("OTA", "Update complete: %d bytes. Restarting...", total);
+    httpd_resp_sendstr(req, "Firmware update successful. Rebooting...");
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    esp_restart();
+    return ESP_OK;
+}
+
+esp_err_t options_handler(httpd_req_t *req)
+{
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type");
+
+    httpd_resp_send(req, NULL, 0);
+    return ESP_OK;
+}
+
 // HTTP 服务器启动
 httpd_handle_t start_webserver()
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     ESP_ERROR_CHECK(httpd_start(&server, &config));
+
+    httpd_uri_t cors_options_uri = {
+        .uri     = "/upload",
+        .method  = HTTP_OPTIONS,
+        .handler = options_handler,
+    };
+    httpd_register_uri_handler(server, &cors_options_uri);
 
     httpd_uri_t whoami_uri = {
         .uri     = "/whoami",
@@ -93,8 +161,16 @@ httpd_handle_t start_webserver()
         .uri          = "/esp-ws",
         .method       = HTTP_GET,
         .handler      = websocket_handler,
-        .is_websocket = true};
+        .is_websocket = true,
+    };
     httpd_register_uri_handler(server, &ws_uri);
+
+    httpd_uri_t ota_post_uri = {
+        .uri     = "/upload",
+        .method  = HTTP_POST,
+        .handler = ota_post_handler,
+    };
+    httpd_register_uri_handler(server, &ota_post_uri);
 
     ESP_LOGI(TAG, "start_webserver");
 

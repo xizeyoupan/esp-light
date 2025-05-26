@@ -64,8 +64,8 @@ void start_sta_mode()
         },
     };
 
-    strncpy((char *)sta_config.sta.ssid, user_config.wifi_ssid, strlen(user_config.wifi_ssid));
-    strncpy((char *)sta_config.sta.password, user_config.wifi_pass, strlen(user_config.wifi_pass));
+    strlcpy((char *)sta_config.sta.ssid, user_config.wifi_ssid, sizeof(sta_config.sta.ssid));
+    strlcpy((char *)sta_config.sta.password, user_config.wifi_pass, sizeof(sta_config.sta.password));
 
     ESP_LOGI(TAG, "connecting to ap SSID:%s password:%s", sta_config.sta.ssid, sta_config.sta.password);
 
