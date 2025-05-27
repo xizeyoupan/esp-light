@@ -132,6 +132,13 @@ cJSON *get_user_config_json(void)
     cJSON_AddStringToObject(data, "mqtt_client_id", user_config.mqtt_client_id);
     cJSON_AddStringToObject(data, "mqtt_topic", user_config.mqtt_topic);
 
+    cJSON_AddStringToObject(data, "ha_broker_address", user_config.ha_broker_address);
+    cJSON_AddStringToObject(data, "ha_broker_username", user_config.ha_broker_username);
+    cJSON_AddStringToObject(data, "ha_broker_password", user_config.ha_broker_password);
+    cJSON_AddStringToObject(data, "ha_entity_name", user_config.ha_entity_name);
+    cJSON_AddStringToObject(data, "ha_unique_id", user_config.ha_unique_id);
+    cJSON_AddStringToObject(data, "ha_discovery_prefix", user_config.ha_discovery_prefix);
+
 get_user_config_json_end:
     return data;
 }
@@ -145,20 +152,20 @@ void assign_ledc_config_from_json(const cJSON *data)
 
     const cJSON *brightness_input = cJSON_GetObjectItem(data, "brightness_input");
     user_config.brightness_input  = brightness_input->valuedouble;
-    const cJSON *frequency       = cJSON_GetObjectItem(data, "frequency");
-    user_config.frequency        = frequency->valuedouble;
-    const cJSON *pwm_duty_min    = cJSON_GetObjectItem(data, "pwm_duty_min");
-    user_config.pwm_duty_min     = pwm_duty_min->valuedouble;
-    const cJSON *pwm_duty_max    = cJSON_GetObjectItem(data, "pwm_duty_max");
-    user_config.pwm_duty_max     = pwm_duty_max->valuedouble;
-    const cJSON *boot_action     = cJSON_GetObjectItem(data, "boot_action");
-    user_config.boot_action      = boot_action->valuedouble;
-    const cJSON *boot_brightness = cJSON_GetObjectItem(data, "boot_brightness");
-    user_config.boot_brightness  = boot_brightness->valuedouble;
-    const cJSON *output_func     = cJSON_GetObjectItem(data, "output_func");
-    user_config.output_func      = output_func->valuedouble;
-    const cJSON *gamma_value     = cJSON_GetObjectItem(data, "gamma_value");
-    user_config.gamma_value      = gamma_value->valuedouble;
+    const cJSON *frequency        = cJSON_GetObjectItem(data, "frequency");
+    user_config.frequency         = frequency->valuedouble;
+    const cJSON *pwm_duty_min     = cJSON_GetObjectItem(data, "pwm_duty_min");
+    user_config.pwm_duty_min      = pwm_duty_min->valuedouble;
+    const cJSON *pwm_duty_max     = cJSON_GetObjectItem(data, "pwm_duty_max");
+    user_config.pwm_duty_max      = pwm_duty_max->valuedouble;
+    const cJSON *boot_action      = cJSON_GetObjectItem(data, "boot_action");
+    user_config.boot_action       = boot_action->valuedouble;
+    const cJSON *boot_brightness  = cJSON_GetObjectItem(data, "boot_brightness");
+    user_config.boot_brightness   = boot_brightness->valuedouble;
+    const cJSON *output_func      = cJSON_GetObjectItem(data, "output_func");
+    user_config.output_func       = output_func->valuedouble;
+    const cJSON *gamma_value      = cJSON_GetObjectItem(data, "gamma_value");
+    user_config.gamma_value       = gamma_value->valuedouble;
 }
 
 void assign_user_config_from_json(const cJSON *data)
@@ -208,4 +215,17 @@ void assign_user_config_from_json(const cJSON *data)
     strcpy(user_config.mqtt_client_id, mqtt_client_id->valuestring);
     const cJSON *mqtt_topic = cJSON_GetObjectItem(data, "mqtt_topic");
     strcpy(user_config.mqtt_topic, mqtt_topic->valuestring);
+
+    const cJSON *ha_broker_address = cJSON_GetObjectItem(data, "ha_broker_address");
+    strcpy(user_config.ha_broker_address, ha_broker_address->valuestring);
+    const cJSON *ha_broker_username = cJSON_GetObjectItem(data, "ha_broker_username");
+    strcpy(user_config.ha_broker_username, ha_broker_username->valuestring);
+    const cJSON *ha_broker_password = cJSON_GetObjectItem(data, "ha_broker_password");
+    strcpy(user_config.ha_broker_password, ha_broker_password->valuestring);
+    const cJSON *ha_entity_name = cJSON_GetObjectItem(data, "ha_entity_name");
+    strcpy(user_config.ha_entity_name, ha_entity_name->valuestring);
+    const cJSON *ha_unique_id = cJSON_GetObjectItem(data, "ha_unique_id");
+    strcpy(user_config.ha_unique_id, ha_unique_id->valuestring);
+    const cJSON *ha_discovery_prefix = cJSON_GetObjectItem(data, "ha_discovery_prefix");
+    strcpy(user_config.ha_discovery_prefix, ha_discovery_prefix->valuestring);
 }

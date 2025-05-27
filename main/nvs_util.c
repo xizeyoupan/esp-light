@@ -73,6 +73,11 @@ void reset_user_config()
     user_config.msg_buf_send_size = 30 * 1024;
 
     strcpy(user_config.broker_address_uri, "mqtt://bemfa.com:9501");
+
+    strcpy(user_config.ha_broker_address, "mqtt://homeassistant.local:1883");
+    strcpy(user_config.ha_entity_name, "ESP32 灯");
+    strcpy(user_config.ha_unique_id, "esp32_light_001");
+    strcpy(user_config.ha_discovery_prefix, "homeassistant");
 }
 
 void load_user_config()

@@ -115,7 +115,7 @@ void handle_req_task(void *pvParameters)
                 save_user_config();
                 ledc_update_pwm();
 
-                mqtt_publish_brightness();
+                bemfa_ha_mqtt_publish_state_topic();
 
                 cJSON_AddStringToObject(resp_json, "param", "user_config");
                 cJSON *user_config_json = get_user_config_json();
@@ -153,6 +153,10 @@ void handle_req_task(void *pvParameters)
                     goto json_parse_end;
                 }
                 cJSON_AddItemToObject(resp_json, "data", user_config_json);
+            } else if (strcmp(param->valuestring, "register_ha_entity") == 0) {
+                ha_mqtt_register_entity();
+            } else if (strcmp(param->valuestring, "remove_ha_entity") == 0) {
+                ha_mqtt_remove_entity();
             }
         } else if (strcmp(type->valuestring, "ping") == 0) {
             cJSON_AddStringToObject(resp_json, "type", "pong");

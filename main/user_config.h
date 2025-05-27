@@ -116,6 +116,13 @@ typedef struct
     char mqtt_client_id[128];
     char mqtt_topic[128];
 
+    char ha_broker_address[128];
+    char ha_broker_username[128];
+    char ha_broker_password[128];
+    char ha_entity_name[64];
+    char ha_unique_id[64];
+    char ha_discovery_prefix[64];
+
 } user_config_t;
 
 #ifdef __cplusplus

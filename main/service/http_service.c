@@ -14,26 +14,18 @@ static esp_err_t get_whoami_handler(httpd_req_t *req)
     return httpd_resp_send(req, response, strlen(response));
 }
 
-esp_err_t websocket_handler(httpd_req_t *req)
+static esp_err_t auth_req(httpd_req_t *req)
 {
-    if (req->method == HTTP_GET) {
+    char query[256];
+    char token[128];
+    char expected_token[128];
 
-        char query[256];
-        char token[128];
-        char expected_token[128];
-
-        if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
-            if (httpd_query_key_value(query, "token", token, sizeof(token)) == ESP_OK) {
-                ESP_LOGI(TAG, "Token received: %s", token);
-                snprintf(expected_token, sizeof(expected_token), "%s:%s", user_config.username, user_config.password);
-                if (strcmp(token, expected_token) != 0) {
-                    ESP_LOGW(TAG, "Unauthorized access: %s", token);
-                    httpd_resp_set_status(req, "401 Unauthorized");
-                    httpd_resp_send(req, "Unauthorized", HTTPD_RESP_USE_STRLEN);
-                    return ESP_FAIL;
-                }
-            } else {
-                ESP_LOGW(TAG, "Authorization token missing");
+    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
+        if (httpd_query_key_value(query, "token", token, sizeof(token)) == ESP_OK) {
+            ESP_LOGI(TAG, "Token received: %s", token);
+            snprintf(expected_token, sizeof(expected_token), "%s:%s", user_config.username, user_config.password);
+            if (strcmp(token, expected_token) != 0) {
+                ESP_LOGW(TAG, "Unauthorized access: %s", token);
                 httpd_resp_set_status(req, "401 Unauthorized");
                 httpd_resp_send(req, "Unauthorized", HTTPD_RESP_USE_STRLEN);
                 return ESP_FAIL;
@@ -43,6 +35,24 @@ esp_err_t websocket_handler(httpd_req_t *req)
             httpd_resp_set_status(req, "401 Unauthorized");
             httpd_resp_send(req, "Unauthorized", HTTPD_RESP_USE_STRLEN);
             return ESP_FAIL;
+        }
+    } else {
+        ESP_LOGW(TAG, "Authorization token missing");
+        httpd_resp_set_status(req, "401 Unauthorized");
+        httpd_resp_send(req, "Unauthorized", HTTPD_RESP_USE_STRLEN);
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t websocket_handler(httpd_req_t *req)
+{
+    if (req->method == HTTP_GET) {
+
+        esp_err_t auth_result = auth_req(req);
+        if (auth_result != ESP_OK) {
+            return auth_result;
         }
 
         if (httpd_ws_get_fd_info(req->handle, httpd_req_to_sockfd(req)) == HTTPD_WS_CLIENT_WEBSOCKET) {
@@ -80,6 +90,11 @@ char buf[4096];
 esp_err_t ota_post_handler(httpd_req_t *req)
 {
     httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+
+    esp_err_t auth_result = auth_req(req);
+    if (auth_result != ESP_OK) {
+        return auth_result;
+    }
 
     esp_ota_handle_t ota_handle;
     const esp_partition_t *ota_partition = esp_ota_get_next_update_partition(NULL);
