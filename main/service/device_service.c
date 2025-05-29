@@ -139,6 +139,8 @@ cJSON *get_user_config_json(void)
     cJSON_AddStringToObject(data, "ha_unique_id", user_config.ha_unique_id);
     cJSON_AddStringToObject(data, "ha_discovery_prefix", user_config.ha_discovery_prefix);
 
+    cJSON_AddNumberToObject(data, "button_period_ms", user_config.button_period_ms);
+
 get_user_config_json_end:
     return data;
 }
@@ -228,4 +230,7 @@ void assign_user_config_from_json(const cJSON *data)
     strcpy(user_config.ha_unique_id, ha_unique_id->valuestring);
     const cJSON *ha_discovery_prefix = cJSON_GetObjectItem(data, "ha_discovery_prefix");
     strcpy(user_config.ha_discovery_prefix, ha_discovery_prefix->valuestring);
+
+    const cJSON *button_period_ms = cJSON_GetObjectItem(data, "button_period_ms");
+    user_config.button_period_ms  = button_period_ms->valuedouble;
 }

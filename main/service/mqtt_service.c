@@ -4,7 +4,6 @@ extern user_config_t user_config;
 extern MessageBufferHandle_t xMessageBufferReqRecv;
 
 static const char *TAG          = "MQTT_SERVICE";
-const char *send_config_payload = "{\"type\":\"quest\",\"param\":\"get_user_config\",\"data\":\"\"}";
 
 esp_mqtt_client_handle_t bemfa_mqtt_client = NULL;
 esp_mqtt_client_handle_t ha_mqtt_client    = NULL;
@@ -51,14 +50,7 @@ static int get_brightness_from_bemfa_topic(const char *topic_data)
     return brightness;
 }
 
-static void update_brightness_and_push_config(uint8_t brightness)
-{
-    user_config.brightness_input = brightness;
-    ESP_LOGI(TAG, "Setting brightness to %d", user_config.brightness_input);
-    ledc_update_pwm();
-    save_user_config();
-    xMessageBufferSend(xMessageBufferReqRecv, send_config_payload, strlen(send_config_payload), portMAX_DELAY);
-}
+
 
 static void ha_mqtt_publish_state_topic()
 {
@@ -221,7 +213,6 @@ void bemfa_ha_mqtt_start(void)
         ESP_LOGI(TAG, "Bemfa MQTT client started");
     } else {
         ESP_LOGW(TAG, "Bemfa MQTT client configuration is incomplete. Skip");
-        return;
     }
 
     if (strlen(user_config.ha_broker_address) > 0 &&
@@ -236,7 +227,6 @@ void bemfa_ha_mqtt_start(void)
         ESP_LOGI(TAG, "HA MQTT client started");
     } else {
         ESP_LOGW(TAG, "Home Assistant MQTT client configuration is incomplete. Skip");
-        return;
     }
 }
 

@@ -19,6 +19,7 @@
 #include "esp_ota_ops.h"
 #include "esp_system.h"
 #include "esp_task_wdt.h"
+#include "esp_timer.h"
 #include "esp_wifi.h"
 
 #include "driver/gpio.h"
@@ -122,6 +123,8 @@ typedef struct
     char ha_entity_name[64];
     char ha_unique_id[64];
     char ha_discovery_prefix[64];
+
+    uint16_t button_period_ms;
 
 } user_config_t;
 

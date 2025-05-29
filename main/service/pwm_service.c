@@ -77,3 +77,14 @@ void ledc_update_pwm()
     ledc_set_duty_and_update(LEDC_MODE, LEDC_CHANNEL, get_output_pwm_duty(), 0);
     ESP_LOGI(TAG, "LEDC duty updated to: %lu, freq: %lu", get_output_pwm_duty(), user_config.frequency);
 }
+
+extern MessageBufferHandle_t xMessageBufferReqRecv;
+const char *send_config_payload = "{\"type\":\"quest\",\"param\":\"get_user_config\",\"data\":\"\"}";
+void update_brightness_and_push_config(uint8_t brightness)
+{
+    user_config.brightness_input = brightness;
+    ESP_LOGI(TAG, "Setting brightness to %d", user_config.brightness_input);
+    ledc_update_pwm();
+    save_user_config();
+    xMessageBufferSend(xMessageBufferReqRecv, send_config_payload, strlen(send_config_payload), portMAX_DELAY);
+}

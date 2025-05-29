@@ -139,6 +139,7 @@ static void start_mdns(void)
     // set mDNS hostname (required if you want to advertise services)
     ESP_ERROR_CHECK(mdns_hostname_set(user_config.mdns_host_name));
     ESP_LOGI(TAG, "mdns hostname set to: [ %s ]", user_config.mdns_host_name);
+    mdns_instance_name_set("Puteng's ESP32 Light");
 
     // initialize service
     ESP_ERROR_CHECK(mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0));

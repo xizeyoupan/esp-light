@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
 void scan_button_task(void *pvParameters);
+void handle_button_task(void *pvParameters);
 
 #ifdef __cplusplus
 }

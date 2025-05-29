@@ -23,23 +23,79 @@ void scan_button_task(void *pvParameters)
     gpio_config(&io_conf);
 
     button_init(&button0, read_button_GPIO, 0, 0);
-    // button_init(&button1, read_button_GPIO, 0, 1);
 
     button_attach(&button0, SINGLE_CLICK, btn_single_click_handler);
-    // button_attach(&button1, SINGLE_CLICK, btn_single_click_handler);
-
     button_attach(&button0, PRESS_UP, btn_press_down_up_handler);
-    // button_attach(&button0, PRESS_DOWN, btn_press_down_up_handler);
-
-    button_attach(&button1, PRESS_UP, btn_press_down_up_handler);
-    // button_attach(&button1, PRESS_DOWN, btn_press_down_up_handler);
+    button_attach(&button0, LONG_PRESS_HOLD, btn_long_press_handler);
+    button_attach(&button0, LONG_PRESS_START, btn_long_press_handler);
 
     button_start(&button0);
-    // button_start(&button1);
 
     while (1) {
         button_ticks();
         vTaskDelay(pdMS_TO_TICKS(TICKS_INTERVAL));
+    }
+
+    vTaskDelete(NULL);
+}
+
+void handle_button_task(void *pvParameters)
+{
+    BaseType_t core_id = xPortGetCoreID();
+    ESP_LOGI(TAG, "handle_button_task is running on core %d.", core_id);
+    uint8_t prev       = 50;
+    uint8_t long_press = 0;
+    uint8_t dir        = 0;
+    float value        = 0;
+
+    uint64_t start = esp_timer_get_time();
+
+    while (1) {
+        EventBits_t uxReturn = xEventGroupWaitBits(button_event_group, BTN0_SINGLE_CLICK_BIT | BTN0_UP_BIT | BTN0_LONG_PRESS_HOLD_BIT | BTN0_LONG_PRESS_START_BIT, pdTRUE, pdFALSE, portMAX_DELAY);
+        if (uxReturn & BTN0_SINGLE_CLICK_BIT) {
+            ESP_LOGI(TAG, "uxReturn & BTN0_SINGLE_CLICK_BIT");
+            if (user_config.brightness_input != 0) {
+                prev = user_config.brightness_input;
+                update_brightness_and_push_config(0);
+            } else {
+                update_brightness_and_push_config(prev);
+            }
+            bemfa_ha_mqtt_publish_state_topic();
+        } else if (uxReturn & BTN0_UP_BIT) {
+            ESP_LOGI(TAG, "uxReturn & BTN0_UP_BIT");
+            if (long_press) {
+                ESP_LOGI(TAG, "value: %f", value);
+                if (value >= 100 || value <= 1) dir = 1 - dir;
+                update_brightness_and_push_config(user_config.brightness_input);
+                bemfa_ha_mqtt_publish_state_topic();
+            }
+            long_press = 0;
+        } else if (uxReturn & BTN0_LONG_PRESS_START_BIT) {
+            ESP_LOGI(TAG, "uxReturn & BTN0_LONG_PRESS_START_BIT");
+            value = user_config.brightness_input;
+            start = esp_timer_get_time();
+        } else if (uxReturn & BTN0_LONG_PRESS_HOLD_BIT) {
+            // ESP_LOGI(TAG, "uxReturn & BTN0_LONG_PRESS_HOLD_BIT");
+            if (user_config.brightness_input == 0) continue;
+            long_press  = 1;
+            float delta = 100.0 / user_config.button_period_ms * (esp_timer_get_time() - start) / 1000;
+            start       = esp_timer_get_time();
+
+            if (dir) {
+                value += delta;
+                if (value >= 100) {
+                    value = 100;
+                }
+            } else {
+                value -= delta;
+                if (value <= 1) {
+                    value = 1;
+                }
+            }
+
+            user_config.brightness_input = value;
+            ledc_update_pwm();
+        }
     }
 
     vTaskDelete(NULL);

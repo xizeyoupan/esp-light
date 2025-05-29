@@ -39,6 +39,7 @@ void app_main(void)
     configASSERT(xMessageBufferReqRecv);
 
     xTaskCreate(&scan_button_task, "scan_button", 1024 * 5, NULL, 5, NULL);
+    xTaskCreate(&handle_button_task, "handle_button", 1024 * 5, NULL, 5, NULL);
 
     ledc_init();
 

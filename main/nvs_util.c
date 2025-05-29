@@ -45,6 +45,9 @@ extern user_config_t user_config;
 void reset_user_config()
 {
     ESP_LOGI(TAG, "Reset user config");
+
+    memset(&user_config, 0, sizeof(user_config_t));
+
     user_config.pwm_gpio_num = 10;
     user_config.key_gpio_num = 9;
 
@@ -66,7 +69,7 @@ void reset_user_config()
     strcpy(user_config.password, "0d00");
     strcpy(user_config.wifi_ap_ssid, "ESP-LIGHT-AP");
     strcpy(user_config.wifi_ap_pass, "07210721");
-    strcpy(user_config.mdns_host_name, "esp-light");
+    strcpy(user_config.mdns_host_name, "esplight");
     user_config.ws_recv_buf_size  = 1024;
     user_config.ws_send_buf_size  = 10 * 1024;
     user_config.msg_buf_recv_size = 1024;
@@ -78,6 +81,8 @@ void reset_user_config()
     strcpy(user_config.ha_entity_name, "ESP32 灯");
     strcpy(user_config.ha_unique_id, "esp32_light_001");
     strcpy(user_config.ha_discovery_prefix, "homeassistant");
+
+    user_config.button_period_ms = 3000;
 }
 
 void load_user_config()
