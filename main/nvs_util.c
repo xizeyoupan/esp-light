@@ -51,17 +51,17 @@ void reset_user_config()
     user_config.pwm_gpio_num = 10;
     user_config.key_gpio_num = 9;
 
-    user_config.brightness_input = 50;
+    user_config.brightness_input = 10;
 
     user_config.frequency    = 50000;
     user_config.pwm_duty_min = 5;
-    user_config.pwm_duty_max = 90;
+    user_config.pwm_duty_max = 80;
 
     user_config.boot_action     = BOOT_ACTION_KEEP;
-    user_config.boot_brightness = 50;
+    user_config.boot_brightness = 10;
 
     user_config.output_func = OUTPUT_FUNC_LINEAR;
-    user_config.gamma_value = 2.2;
+    user_config.gamma_value = 1.5;
 
     user_config.wifi_scan_list_size    = 20;
     user_config.wifi_connect_max_retry = 10;

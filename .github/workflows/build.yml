@@ -1,3 +1,5 @@
+name: Build and Release
+
 on:
   push:
   workflow_dispatch:
@@ -18,11 +20,32 @@ jobs:
       - name: esp-idf build
         run: docker run --rm -v $PWD:/project -w /project -u $UID -e HOME=/tmp espressif/idf:release-v5.3 idf.py build
 
-      - name: Archive build output artifacts
+      - name: Collect release files
+        run: |
+          mkdir -p release
+          cp build/bootloader/bootloader.bin release/
+          cp build/partition_table/partition-table.bin release/
+          cp build/ota_data_initial.bin release/
+          cp build/${{ github.event.repository.name }}.bin release/
+
+      - name: Upload artifacts to GitHub Actions
         uses: actions/upload-artifact@v4
         with:
-          path: |
-            build/bootloader/bootloader.bin
-            build/partition_table/partition-table.bin
-            build/ota_data_initial.bin
-            build/${{ github.event.repository.name }}.bin
+          name: ${{ github.event.repository.name }}-firmware-${{ github.ref_name }}
+          path: release/*
+
+      - name: Create zip archive
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          cd release
+          zip ../${{ github.event.repository.name }}-firmware-${{ github.ref_name }}.zip *
+
+      - name: Upload zip to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          files: ${{ github.event.repository.name }}-firmware-${{ github.ref_name }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
